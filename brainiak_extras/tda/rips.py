@@ -1,5 +1,5 @@
 """
-Author: Michael Lesnick
+Authors: Michael Lesnick, Bryn Keller
 
 Computes barcodes of a Vietoris-Rips filtration of a distance matrix.
 
@@ -31,8 +31,10 @@ Construction of the Vietoris-Rips Complex" by Afra Zomorodian. In the case that
 we are building the whole Vietoris-Rips filtration, this is not the most
 efficient approach, but may be good enough for the purposes of this wrapper.
 
- Example usage:
- COMING SOON, ALSO SEE BELOW IN THIS VERY FILE
+#TODO [Important]: Currently using persistent homology, but for efficiency oughtto be using persistent cohomology!!!  
+
+Example usage:
+COMING SOON, ALSO SEE BELOW IN THIS VERY FILE
 """
 import numpy as np
 import phat
