@@ -6,7 +6,7 @@
 *.lib
 *.o
 
-brainiak.egg-info
+*.egg-info
 build
 .cache
 .coverage
