@@ -112,7 +112,7 @@ def create_boundary_columns(sorted_simplices):
 
         #now compute the boundary column associated to tau with the help of the dictionary
         tau_column = [simplex_index_dict[tau_hat] for tau_hat in faces(tau) if len(tau_hat) > 0]
-
+        tau_column.sort()
         bdy_matrix_pre.append((dim_tau,tau_column))
     return bdy_matrix_pre
 
@@ -126,14 +126,15 @@ def rips_filtration(max_dim, max_scale, dist_mat):
     sorted_simplices = rips_simplices(max_dim, max_scale, dist_mat)
 
     bdy_matrix_pre = create_boundary_columns(sorted_simplices)
-    print(sorted_simplices)
-    print(bdy_matrix_pre)
+    
+    #print(sorted_simplices)
+    #print(bdy_matrix_pre)
+    
     bdy_matrix = phat.boundary_matrix(representation = phat.representations.bit_tree_pivot_column)
     bdy_matrix.columns = bdy_matrix_pre
 
+    #call Bryn's PHAT wrapper for the persistence computation
     pairs = bdy_matrix.compute_persistence_pairs()
-    for i in range(len(pairs)):
-        print(pairs[i])
 
     #next, rescale the pairs to their original filtration values, eliminating pairs with the same birth and death time.
     #In keeping with our chosen output format, we also add the dimension to the pair.
@@ -141,10 +142,6 @@ def rips_filtration(max_dim, max_scale, dist_mat):
     for i in range(len(pairs)):
         birth = sorted_simplices[pairs[i][0]][1]
         death = sorted_simplices[pairs[i][1]][1]
-        print('first simplex',sorted_simplices[pairs[i][0]][0])
-        print('second simplex',sorted_simplices[pairs[i][1]][0])
-        print('birth:',birth)
-        print('death:',death)
         if birth<death:
            dimension = len(sorted_simplices[pairs[i][0]])-1
            scaled_pairs.append([birth,death,dimension])
@@ -177,5 +174,5 @@ if __name__ ==  '__main__':
     print("\nThere are %d persistence pairs: " % len(pairs_with_dim))
     for triplet in pairs_with_dim:
         print("Birth: ",triplet[0],", Death: ",triplet[1], type(triplet[1]), ", Dimension: ",triplet[2])
-    print(sorted_pairs)
-    assert(sorted_pairs == [(0, 1, 1), (0, 1, 1), (0, 1.4, 1), (0, float('inf'), 0), (1, 1.4, 1), (1, 1.4, 1)])
+    #print(sorted_pairs)
+    #assert(sorted_pairs == [(0, 1, 1), (0, 1, 1), (0, 1.4, 1), (0, float('inf'), 0), (1, 1.4, 1), (1, 1.4, 1)])
