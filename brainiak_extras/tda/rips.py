@@ -7,20 +7,8 @@ Input:
 dist_mat, a distance matrix, represented as a list of lists;
 max_scale, a real number;
 max_dim, a non-negative integer.
-dist_mat[j] represents the j^{th} row of the distance matrix (assuming the
-indexing starts at 0), or alternatively, the part of the distance matrix below
-the diagonal (henceforth, PBD). The code does not use any part of dist_mat
-other than the PBD, and behaves the same regardless of whether the full matrix
-or just the PBD is given. Note that if only the PBD is given, we have
-dist_mat[0] = [].
-
 
 Output:
-The barcodes up to dimension max_dim, for the truncated Vietoris-Rips
-filtration, including only simplices whose index of appearance is <=  max_scale
-The barcodes are output as a list of three-element lists. Each three-element
-lists represents one interval of in barcode and has the form
-[birth,death,dimension]
 
 More details: This code is designed to work with Bryn Kellers's Python wrapper
 for PHAT, the persistent homology code written by Ulrich Bauer, Michael Kerber,
@@ -31,14 +19,15 @@ Construction of the Vietoris-Rips Complex" by Afra Zomorodian. In the case that
 we are building the whole Vietoris-Rips filtration, this is not the most
 efficient approach, but may be good enough for the purposes of this wrapper.
 
-#TODO [Important]: Currently using persistent homology, but for efficiency oughtto be using persistent cohomology!!!  
+#TODO [Important]: Currently using persistent homology, but for efficiency oughtto be using persistent cohomology!!!
 
 Example usage:
 COMING SOON, ALSO SEE BELOW IN THIS VERY FILE
 """
 import numpy as np
 import phat
-import itertools as it
+import typecheck as tc
+import typing as tg
 
 #To prepare for construction of the boundary matrices, first convert dist_mat
 #into a column-sparse lower triangular incidence matrix N for the
@@ -76,8 +65,13 @@ def faces(tau):
         tau_hat.remove(i)
         yield tuple(tau_hat)
 
-def rips_simplices(max_dim, max_scale, dist_mat):
+def gte_zero(n):
+    return n >= 0
 
+def gt_zero(n):
+    return n > 0
+
+def rips_simplices(max_dim, max_scale, dist_mat):
     LN = lower_neighbors(dist_mat,max_scale)
     simplices = np.concatenate([add_cofaces(LN, max_dim, dist_mat, u)
                                 for u in range(len(dist_mat))])
@@ -118,20 +112,49 @@ def create_boundary_columns(sorted_simplices):
         bdy_matrix_pre.append((dim_tau,tau_column))
     return bdy_matrix_pre
 
-#builds a boundary matrix for the boundary-Rips bifiltration up to dimension k.
-#also builds the corresponding list of bigrades
-#follows closely the ``incremental algorithm" in the paper on fast Vietoris-Rips comptuation by Zomorodian, with some modification to store boundary matrix and filtration info
-#That in turn is based on a version of Bron-Kerbosch algorithm
-#Input is clear from the argument names
-#Output: simplices, a list of [Column,grade] pairs.  Each pair is in list form.
-def rips_filtration(max_dim, max_scale, dist_mat):
+def numpy_2d_float(x):
+    return isinstance(x, (np.ndarray, np.generic)) and len(x.shape) == 2 and x.dtype in (np.float32, np.float64)
+
+array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))), numpy_2d_float)
+
+@tc.typecheck
+def rips_filtration(max_dim: tc.all(int, gte_zero),
+                    max_scale: tc.all(tc.any(int, float), gt_zero),
+                    dist_mat: array_like_2d):
+    """
+    Builds a boundary matrix for the boundary-Rips filtration up to dimension
+    `max_dim`. Also builds the corresponding list of bigrades follows closely
+    the ``incremental algorithm" in the paper on fast Vietoris-Rips comptuation
+    by Zomorodian, with some modification to store boundary matrix and
+    filtration info. That in turn is based on a version of Bron-Kerbosch algorithm.
+
+    Parameters
+    ----------
+
+    max_dim: int >= 0
+        the highest dimension to compute
+    max_scale: float
+        the highest scale (distance) to consider
+    dist_mat: 2D array
+        an n x n distance matrix (such as produced by
+        scipy.spatial.distance.pdist), which may be lower-triangular.
+    Returns
+    -------
+
+    pairs: list of (column, grade) pairs
+        The barcodes up to dimension max_dim, for the truncated Vietoris-Rips
+        filtration, including only simplices whose index of appearance is <= max_scale
+        The barcodes are output as a list of three-element lists. Each three-element
+        lists represents one interval of in barcode and has the form
+        [birth,death,dimension]
+    """
     sorted_simplices = rips_simplices(max_dim, max_scale, dist_mat)
 
     bdy_matrix_pre = create_boundary_columns(sorted_simplices)
-    
+
     #print(sorted_simplices)
     #print(bdy_matrix_pre)
-    
+
     bdy_matrix = phat.boundary_matrix(representation = phat.representations.bit_tree_pivot_column)
     bdy_matrix.columns = bdy_matrix_pre
 
