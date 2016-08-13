@@ -108,6 +108,7 @@ setup(
         'scikit-learn',
         'scipy',
         'pybind11>=1.7',
+        'phat'
     ],
     author='Princeton Neuroscience Institute and Intel Corporation',
     author_email='bryn.keller@intel.com',
