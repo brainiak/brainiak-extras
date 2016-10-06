@@ -99,9 +99,7 @@ def rips_simplices(max_dim, max_scale, dist_mat):
     sorted_simplices = sorted(simplices, key = lambda labeled_simplex: labeled_simplex[1])
 
     #Now reverse the order to get the reverse filtration order.
-    sorted_simplices.reverse()
-    print('sorted simplices')
-    print(sorted_simplices)    
+    sorted_simplices.reverse() 
     return sorted_simplices
 
 def create_coboundary_matrix(sorted_simplices,max_dim):
@@ -144,11 +142,7 @@ def create_coboundary_matrix(sorted_simplices,max_dim):
    
         if len(tau)>1:
             for tau_hat in faces(tau):
-                print(tau_hat)
-                print(simplex_index_dict[tau_hat])
-                cobdy_matrix_pre[simplex_index_dict[tau_hat]][1].append(curr_index)
-        
-    print(cobdy_matrix_pre)     
+                cobdy_matrix_pre[simplex_index_dict[tau_hat]][1].append(curr_index)    
     
     #finally we sort each column of the coboundary matrix.
                 
@@ -167,7 +161,7 @@ def rips_filtration(max_dim, max_scale, dist_mat):
     sorted_simplices = rips_simplices(max_dim, max_scale, dist_mat)
 
     cobdy_matrix_pre = create_coboundary_matrix(sorted_simplices,max_dim)
-    print(cobdy_matrix_pre);    
+    #print(cobdy_matrix_pre);    
     
     #print(sorted_simplices)
     #print(bdy_matrix_pre)
@@ -177,11 +171,6 @@ def rips_filtration(max_dim, max_scale, dist_mat):
 
     #call Bryn's PHAT wrapper for the persistence computation
     pairs = cobdy_matrix.compute_persistence_pairs()
-
-    #for testing    
-    print("\nThere are %d persistence pairs: " % len(pairs))
-    for pair in pairs:
-        print("Birth: %d, Death: %d" % pair)
         
     #next, rescale the pairs to their original filtration values, eliminating pairs with the same birth and death time.
     #In keeping with our chosen output format, we also add the dimension to the pair.
@@ -215,9 +204,8 @@ if __name__ ==  '__main__':
     # example, based on the four-element point cloud (0,0),(0,1),(1,0),(1,1)
     #note that we approximate sqrt(2) by 1.4.
     
-    #my_dist_mat = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]
-    #my_dist_mat = [[0,1,1],[1,0,1],[1,1,0]]
-    my_dist_mat = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]    
+    my_dist_mat = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]
+    #my_dist_mat = [[0,1,1],[1,0,1],[1,1,0]]   
     
     pairs_with_dim = rips_filtration(4,10,my_dist_mat)
     sorted_pairs = sorted(map(tuple, list(pairs_with_dim)))
