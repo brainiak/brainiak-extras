@@ -31,7 +31,18 @@ Construction of the Vietoris-Rips Complex" by Afra Zomorodian. In the case that
 we are building the whole Vietoris-Rips filtration, this is not the most
 efficient approach, but may be good enough for the purposes of this wrapper.
 
-#TODO [Important]: Currently using persistent homology, but for efficiency oughtto be using persistent cohomology!!!  
+#By default, PHAT uses the twist optimization of Kerber and Chen to speed up the computation
+#When used together with persistent cohomology, the twist algorithm drastically speeds up
+#the computation of the persistent homology of Rips complexes.
+#Thus, in this code we do a cohomological computation (i.e., we build the coboundary matrix rather than 
+the boundary matrix.)  The output, however, is the same 
+#as for an ordinary persistent homology computation.
+
+#Note that the PHAT code also provides an option to take the primal matrix as input and compute the coboundary matrix
+#from this.  (In the language of the PHAT paper, forming the coboundary matrix amounts to taking the anti-transpose of the boundary matrix.)
+#In this case, it seems slightly nicer to just compute the coboundary matrix directly, and input this to PHAT; this is what we do.
+
+
 
 Example usage:
 COMING SOON, ALSO SEE BELOW IN THIS VERY FILE
@@ -88,10 +99,12 @@ def rips_simplices(max_dim, max_scale, dist_mat):
     sorted_simplices = sorted(simplices, key = lambda labeled_simplex: labeled_simplex[1])
 
     #Now reverse the order to get the reverse filtration order.
-    sorted_simplices.reverse().
+    sorted_simplices.reverse()
+    print('sorted simplices')
+    print(sorted_simplices)    
     return sorted_simplices
 
-def create_coboundary_matrix(sorted_simplices):
+def create_coboundary_matrix(sorted_simplices,max_dim):
 
     #now that the simplices are sorted, expand the list into a coboundary matrix.
     #For this, we use a Python dictionary, i.e. hash table.
@@ -104,23 +117,39 @@ def create_coboundary_matrix(sorted_simplices):
 
     #this will be our dictionary
     simplex_index_dict = {}
-
-    for i, (tau, _) in enumerate(sorted_simplices):
+    
+    #This builds the dictionary and initializes each column in cobdy_matrix_pre to an empty column, 
+    #with the appropriate dimension
+    for i, (tau, _) in enumerate(reversed(sorted_simplices)):
         #add each simplex tau together with its associated index to the dictionary.
         #if there are j simplices added already, we take the new simplex to have index j.
-        simplex_index_dict[tuple(tau)] = i
-
+        curr_index=len(sorted_simplices)-1-i        
+        simplex_index_dict[tuple(tau)] = curr_index
         #get the dimension of tau
-        dim_tau = len(tau)-1
-
+        
+        #note: PHAT requires each column to be labelled with an index. 
+        #The extra indices are needed to specify the order in which columns are handled when using the twist optimization.
+        #in the case of ordinary homology, this extra index is jsut the dimension of the corresponding simplex, but in cohomology it is the
+        #codimension", as defined in the following line of code.  
+        codim_tau = max_dim-(len(tau)-1)
         #add a column in cobdy_matrx corresponding to tau, initially empty.
-        cobdy_matrix_pre.append((dim_tau,[]))
-
-        #now, for each face sigma of tau, add an entry corresponding to tau into the coboundary column of sigma.
-        #note that this uses the dictionary
-        for tau_hat in faces(tau) 
-            cobdy_matrix_pre[simplex_index_dict[tau_hat]][1]).append(i)
-
+        cobdy_matrix_pre.insert(0,(codim_tau,[]))
+        
+        
+    #now we add in all of the column entries   
+    for i, (tau, _) in enumerate(reversed(sorted_simplices)):   
+        curr_index=len(sorted_simplices)-1-i 
+        #for each face sigma of tau, add an entry corresponding to tau into the coboundary column of sigma.
+        #note how this uses the dictionary
+   
+        if len(tau)>1:
+            for tau_hat in faces(tau):
+                print(tau_hat)
+                print(simplex_index_dict[tau_hat])
+                cobdy_matrix_pre[simplex_index_dict[tau_hat]][1].append(curr_index)
+        
+    print(cobdy_matrix_pre)     
+    
     #finally we sort each column of the coboundary matrix.
                 
     for i, (tau, _) in enumerate(sorted_simplices):
@@ -137,7 +166,8 @@ def create_coboundary_matrix(sorted_simplices):
 def rips_filtration(max_dim, max_scale, dist_mat):
     sorted_simplices = rips_simplices(max_dim, max_scale, dist_mat)
 
-    cobdy_matrix_pre = create_coboundary_matrix(sorted_simplices)
+    cobdy_matrix_pre = create_coboundary_matrix(sorted_simplices,max_dim)
+    print(cobdy_matrix_pre);    
     
     #print(sorted_simplices)
     #print(bdy_matrix_pre)
@@ -148,6 +178,11 @@ def rips_filtration(max_dim, max_scale, dist_mat):
     #call Bryn's PHAT wrapper for the persistence computation
     pairs = cobdy_matrix.compute_persistence_pairs()
 
+    #for testing    
+    print("\nThere are %d persistence pairs: " % len(pairs))
+    for pair in pairs:
+        print("Birth: %d, Death: %d" % pair)
+        
     #next, rescale the pairs to their original filtration values, eliminating pairs with the same birth and death time.
     #In keeping with our chosen output format, we also add the dimension to the pair.
     scaled_pairs = []
@@ -155,8 +190,7 @@ def rips_filtration(max_dim, max_scale, dist_mat):
         cobirth = sorted_simplices[pairs[i][0]][1]
         codeath = sorted_simplices[pairs[i][1]][1]
         if codeath<cobirth:
-           #NOTE TO SELF: IS THE THIRD INDEX NECESSARY HERE?  IT WASN'T THERE IN THE PRIMAL VERSION, BUT THAT LOOKS TO BE WRONG, SO I FIXED IT.  DOUBLE CHECK THIS.  IT MIGHT HAVE JSUT BEEN A HAPPY ACCIDENT THAT IT WAS WORKING BEFORE ON THE FIRST TEST.    
-           dimension = len(sorted_simplices[pairs[i][0]][0])-1
+           dimension = len(sorted_simplices[pairs[i][1]][0])-1
            scaled_pairs.append([codeath,cobirth,dimension])
 
     #add in the intervals with endpoint inf
@@ -168,7 +202,6 @@ def rips_filtration(max_dim, max_scale, dist_mat):
     for i in range(len(pairs)):
         paired_indices[pairs[i][0]] = 1
         paired_indices[pairs[i][1]] = 1
-
     for i in range(len(paired_indices)):
         if paired_indices[i] == 0:
             birth = sorted_simplices[i][1]
@@ -181,8 +214,12 @@ if __name__ ==  '__main__':
     #TODO: turn this into a proper unit test
     # example, based on the four-element point cloud (0,0),(0,1),(1,0),(1,1)
     #note that we approximate sqrt(2) by 1.4.
-    my_dist_mat = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]
-    pairs_with_dim = rips_filtration(3,10,my_dist_mat)
+    
+    #my_dist_mat = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]
+    #my_dist_mat = [[0,1,1],[1,0,1],[1,1,0]]
+    my_dist_mat = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]    
+    
+    pairs_with_dim = rips_filtration(4,10,my_dist_mat)
     sorted_pairs = sorted(map(tuple, list(pairs_with_dim)))
     print("\nThere are %d persistence pairs: " % len(pairs_with_dim))
     for triplet in pairs_with_dim:
