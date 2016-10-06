@@ -19,7 +19,7 @@ Output:
 The barcodes up to dimension max_dim, for the truncated Vietoris-Rips
 filtration, including only simplices whose index of appearance is <=  max_scale
 The barcodes are output as a list of three-element lists. Each three-element
-lists represents one interval of in barcode and has the form
+lists represents one interval of one barcode and has the form
 [birth,death,dimension]
 
 More details: This code is designed to work with Bryn Kellers's Python wrapper
@@ -77,29 +77,30 @@ def faces(tau):
         yield tuple(tau_hat)
 
 def rips_simplices(max_dim, max_scale, dist_mat):
-
     LN = lower_neighbors(dist_mat,max_scale)
     simplices = np.concatenate([add_cofaces(LN, max_dim, dist_mat, u)
                                 for u in range(len(dist_mat))])
 
-    #now, sort the simplices to put them in filtration order the following line
+    #now, sort the simplices to put them in reverse filtration order.  The following line
     #gives a valid filtration order because the python sort is stable and the
     #above method for constructing the filtration always adds a simplex after
     #its lower-dimensional faces
     sorted_simplices = sorted(simplices, key = lambda labeled_simplex: labeled_simplex[1])
 
+    #Now reverse the order to get the reverse filtration order.
+    sorted_simplices.reverse().
     return sorted_simplices
 
-def create_boundary_columns(sorted_simplices):
+def create_coboundary_matrix(sorted_simplices):
 
-    #now that the simplices are sorted, expand the list into a boundary matrix.
+    #now that the simplices are sorted, expand the list into a coboundary matrix.
     #For this, we use a Python dictionary, i.e. hash table.
     #Keys are simplices, represented as tuples of vectors, and values are simplex indices.
     #We build the dictionary as we build the boundary matrix
 
-    #this will be our boundary matrix. simplex dimensions are also stored, as
+    #this will be our coboundary matrix. simplex dimensions are also stored, as
     #per the convention of PHAT and the PHAT wrapper.
-    bdy_matrix_pre = []
+    cobdy_matrix_pre = [] 
 
     #this will be our dictionary
     simplex_index_dict = {}
@@ -112,11 +113,20 @@ def create_boundary_columns(sorted_simplices):
         #get the dimension of tau
         dim_tau = len(tau)-1
 
-        #now compute the boundary column associated to tau with the help of the dictionary
-        tau_column = [simplex_index_dict[tau_hat] for tau_hat in faces(tau) if len(tau_hat) > 0]
-        tau_column.sort()
-        bdy_matrix_pre.append((dim_tau,tau_column))
-    return bdy_matrix_pre
+        #add a column in cobdy_matrx corresponding to tau, initially empty.
+        cobdy_matrix_pre.append((dim_tau,[]))
+
+        #now, for each face sigma of tau, add an entry corresponding to tau into the coboundary column of sigma.
+        #note that this uses the dictionary
+        for tau_hat in faces(tau) 
+            cobdy_matrix_pre[simplex_index_dict[tau_hat]][1]).append(i)
+
+    #finally we sort each column of the coboundary matrix.
+                
+    for i, (tau, _) in enumerate(sorted_simplices):
+        cobdy_matrix_pre[i][1].sort()
+        
+    return cobdy_matrix_pre
 
 #builds a boundary matrix for the boundary-Rips bifiltration up to dimension k.
 #also builds the corresponding list of bigrades
@@ -127,30 +137,31 @@ def create_boundary_columns(sorted_simplices):
 def rips_filtration(max_dim, max_scale, dist_mat):
     sorted_simplices = rips_simplices(max_dim, max_scale, dist_mat)
 
-    bdy_matrix_pre = create_boundary_columns(sorted_simplices)
+    cobdy_matrix_pre = create_coboundary_matrix(sorted_simplices)
     
     #print(sorted_simplices)
     #print(bdy_matrix_pre)
     
-    bdy_matrix = phat.boundary_matrix(representation = phat.representations.bit_tree_pivot_column)
-    bdy_matrix.columns = bdy_matrix_pre
+    cobdy_matrix = phat.boundary_matrix(representation = phat.representations.bit_tree_pivot_column)
+    cobdy_matrix.columns = cobdy_matrix_pre
 
     #call Bryn's PHAT wrapper for the persistence computation
-    pairs = bdy_matrix.compute_persistence_pairs()
+    pairs = cobdy_matrix.compute_persistence_pairs()
 
     #next, rescale the pairs to their original filtration values, eliminating pairs with the same birth and death time.
     #In keeping with our chosen output format, we also add the dimension to the pair.
     scaled_pairs = []
     for i in range(len(pairs)):
-        birth = sorted_simplices[pairs[i][0]][1]
-        death = sorted_simplices[pairs[i][1]][1]
-        if birth<death:
-           dimension = len(sorted_simplices[pairs[i][0]])-1
-           scaled_pairs.append([birth,death,dimension])
+        cobirth = sorted_simplices[pairs[i][0]][1]
+        codeath = sorted_simplices[pairs[i][1]][1]
+        if codeath<cobirth:
+           #NOTE TO SELF: IS THE THIRD INDEX NECESSARY HERE?  IT WASN'T THERE IN THE PRIMAL VERSION, BUT THAT LOOKS TO BE WRONG, SO I FIXED IT.  DOUBLE CHECK THIS.  IT MIGHT HAVE JSUT BEEN A HAPPY ACCIDENT THAT IT WAS WORKING BEFORE ON THE FIRST TEST.    
+           dimension = len(sorted_simplices[pairs[i][0]][0])-1
+           scaled_pairs.append([codeath,cobirth,dimension])
 
     #add in the intervals with endpoint inf
     #To do this, we first construct an array paired_indices such that
-    #if the j^th simplex appears in a pair, paired_incides[j] = 1
+    #if the j^th simplex (in the coboundary order) appears in a pair, paired_incides[j] = 1
     #otherwise paired_incides[j] = 0.
 
     paired_indices = np.zeros(len(sorted_simplices))
