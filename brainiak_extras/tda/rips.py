@@ -9,14 +9,11 @@ max_scale, a real number;
 max_dim, a non-negative integer.
 
 Output:
-<<<<<<< HEAD
 The barcodes up to dimension max_dim, for the truncated Vietoris-Rips
 filtration, including only simplices whose index of appearance is <=  max_scale
 The barcodes are output as a list of three-element lists. Each three-element
 lists represents one interval of one barcode and has the form
 [birth,death,dimension]
-=======
->>>>>>> a37ec299fa2d1dd4909bab87192380dfc6905fd2
 
 More details: This code is designed to work with Bryn Kellers's Python wrapper
 for PHAT, the persistent homology code written by Ulrich Bauer, Michael Kerber,
@@ -27,7 +24,6 @@ Construction of the Vietoris-Rips Complex" by Afra Zomorodian. In the case that
 we are building the whole Vietoris-Rips filtration, this is not the most
 efficient approach, but may be good enough for the purposes of this wrapper.
 
-<<<<<<< HEAD
 #By default, PHAT uses the twist optimization of Kerber and Chen to speed up the computation
 #When used together with persistent cohomology, the twist algorithm drastically speeds up
 #the computation of the persistent homology of Rips complexes.
@@ -37,12 +33,7 @@ the boundary matrix.)  The output, however, is the same
 
 #Note that the PHAT code also provides an option to take the primal matrix as input and compute the coboundary matrix
 #from this.  (In the language of the PHAT paper, forming the coboundary matrix amounts to taking the anti-transpose of the boundary matrix.)
-#In this case, it seems slightly nicer to just compute the coboundary matrix directly, and input this to PHAT; this is what we do.
-
-
-=======
-#TODO [Important]: Currently using persistent homology, but for efficiency oughtto be using persistent cohomology!!!
->>>>>>> a37ec299fa2d1dd4909bab87192380dfc6905fd2
+#In this case, it seems slightly nicer to just compute the coboundary matrix directly, and input this to the PHAT wrapper; this is what we do.
 
 Example usage:
 COMING SOON, ALSO SEE BELOW IN THIS VERY FILE
@@ -88,15 +79,17 @@ def faces(tau):
         tau_hat.remove(i)
         yield tuple(tau_hat)
 
-<<<<<<< HEAD
-=======
 def gte_zero(n):
     return n >= 0
 
 def gt_zero(n):
     return n > 0
 
->>>>>>> a37ec299fa2d1dd4909bab87192380dfc6905fd2
+#TODO: some of the indexing in this piece of code and the next is a bit convoluted:
+#I build the sorted list of simplices, then reverse it
+#Then I build the coboundary matrix in reverse order of the columns.
+#I wonder if these could be simplified a little bit.
+
 def rips_simplices(max_dim, max_scale, dist_mat):
     LN = lower_neighbors(dist_mat,max_scale)
     simplices = np.concatenate([add_cofaces(LN, max_dim, dist_mat, u)
@@ -199,7 +192,6 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
     """
     sorted_simplices = rips_simplices(max_dim, max_scale, dist_mat)
 
-<<<<<<< HEAD
     cobdy_matrix_pre = create_coboundary_matrix(sorted_simplices,max_dim)
     #print(cobdy_matrix_pre);    
     
@@ -208,15 +200,6 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
     
     cobdy_matrix = phat.boundary_matrix(representation = phat.representations.bit_tree_pivot_column)
     cobdy_matrix.columns = cobdy_matrix_pre
-=======
-    bdy_matrix_pre = create_boundary_columns(sorted_simplices)
-
-    #print(sorted_simplices)
-    #print(bdy_matrix_pre)
-
-    bdy_matrix = phat.boundary_matrix(representation = phat.representations.bit_tree_pivot_column)
-    bdy_matrix.columns = bdy_matrix_pre
->>>>>>> a37ec299fa2d1dd4909bab87192380dfc6905fd2
 
     #call Bryn's PHAT wrapper for the persistence computation
     pairs = cobdy_matrix.compute_persistence_pairs()
