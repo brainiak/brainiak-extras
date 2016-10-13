@@ -102,7 +102,7 @@ def rips_simplices(max_dim, max_scale, dist_mat):
     sorted_simplices = sorted(simplices, key = lambda labeled_simplex: labeled_simplex[1])
 
     #Now reverse the order to get the reverse filtration order.
-    sorted_simplices.reverse() 
+    
     return sorted_simplices
 
 def create_coboundary_matrix(sorted_simplices,max_dim):
@@ -121,7 +121,7 @@ def create_coboundary_matrix(sorted_simplices,max_dim):
     
     #This builds the dictionary and initializes each column in cobdy_matrix_pre to an empty column, 
     #with the appropriate dimension
-    for i, (tau, _) in enumerate(reversed(sorted_simplices)):
+    for i, (tau, _) in enumerate(sorted_simplices):
         #add each simplex tau together with its associated index to the dictionary.
         #if there are j simplices added already, we take the new simplex to have index j.
         curr_index=len(sorted_simplices)-1-i        
@@ -138,7 +138,7 @@ def create_coboundary_matrix(sorted_simplices,max_dim):
         
         
     #now we add in all of the column entries   
-    for i, (tau, _) in enumerate(reversed(sorted_simplices)):   
+    for i, (tau, _) in enumerate(sorted_simplices):   
         curr_index=len(sorted_simplices)-1-i 
         #for each face sigma of tau, add an entry corresponding to tau into the coboundary column of sigma.
         #note how this uses the dictionary
@@ -191,7 +191,7 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
         [birth,death,dimension]
     """
     sorted_simplices = rips_simplices(max_dim, max_scale, dist_mat)
-
+    len_minus_one=len(sorted_simplices)-1
     cobdy_matrix_pre = create_coboundary_matrix(sorted_simplices,max_dim)
     #print(cobdy_matrix_pre);    
     
@@ -208,10 +208,10 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
     #In keeping with our chosen output format, we also add the dimension to the pair.
     scaled_pairs = []
     for i in range(len(pairs)):
-        cobirth = sorted_simplices[pairs[i][0]][1]
-        codeath = sorted_simplices[pairs[i][1]][1]
+        cobirth = sorted_simplices[len_minus_one-pairs[i][0]][1]
+        codeath = sorted_simplices[len_minus_one-pairs[i][1]][1]
         if codeath<cobirth:
-           dimension = len(sorted_simplices[pairs[i][1]][0])-1
+           dimension = len(sorted_simplices[len_minus_one-pairs[i][1]][0])-1
            scaled_pairs.append([codeath,cobirth,dimension])
 
     #add in the intervals with endpoint inf
@@ -225,8 +225,8 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
         paired_indices[pairs[i][1]] = 1
     for i in range(len(paired_indices)):
         if paired_indices[i] == 0:
-            birth = sorted_simplices[i][1]
-            dimension = len(sorted_simplices[i][0])-1
+            birth = sorted_simplices[len_minus_one-i][1]
+            dimension = len(sorted_simplices[len_minus_one-i][0])-1
             scaled_pairs.append([birth,float("inf"),dimension])
     return scaled_pairs
 
@@ -238,8 +238,8 @@ if __name__ ==  '__main__':
     
     my_dist_mat = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]
     #my_dist_mat = [[0,1,1],[1,0,1],[1,1,0]]   
-    
-    pairs_with_dim = rips_filtration(4,10,my_dist_mat)
+    my_inf=float('inf')
+    pairs_with_dim = rips_filtration(4,my_inf,my_dist_mat)
     sorted_pairs = sorted(map(tuple, list(pairs_with_dim)))
     print("\nThere are %d persistence pairs: " % len(pairs_with_dim))
     for triplet in pairs_with_dim:
