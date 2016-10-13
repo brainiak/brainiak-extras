@@ -46,13 +46,14 @@ import typing as tg
 #To prepare for construction of the boundary matrices, first convert dist_mat
 #into a column-sparse lower triangular incidence matrix N for the
 #max_scale-thresholded neighborhood graph
+
 def lower_neighbors(dist_mat,max_scale):
     d = np.tril(dist_mat)
     d[d > max_scale] = 0
     #TODO: use csc_matrix instead of lists?
     result = [[] for i in range(d.shape[0])]
     for k, v in np.transpose(d.nonzero()):
-        result[k].append(v)
+        result[k].append(v) 
     return result
 
 # helper function for rips_filtration
@@ -68,7 +69,7 @@ def add_cofaces(lower_neighbors, max_dim, dist_mat, start):
                 sigma = tau + [v]
                 M = [val for val in N if val in lower_neighbors[v]]
                 #get the distance at which sigma appears
-                sigma_dist = max(tau_dist, *[dist_mat[v][u] for u in tau])
+                sigma_dist = max(tau_dist, *[dist_mat[u][v] for u in tau])
                 coface(sigma, sigma_dist, M)
     coface([start], 0, lower_neighbors[start])
     return simplices
@@ -202,17 +203,18 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
     cobdy_matrix.columns = cobdy_matrix_pre
 
     #call Bryn's PHAT wrapper for the persistence computation
-    pairs = cobdy_matrix.compute_persistence_pairs()
-        
+    pairs = cobdy_matrix.compute_persistence_pairs()  
+    
     #next, rescale the pairs to their original filtration values, eliminating pairs with the same birth and death time.
     #In keeping with our chosen output format, we also add the dimension to the pair.
     scaled_pairs = []
     for i in range(len(pairs)):
-        cobirth = sorted_simplices[len_minus_one-pairs[i][0]][1]
+        cobirth = sorted_simplices[len_minus_one-pairs[i][0]][1]        
         codeath = sorted_simplices[len_minus_one-pairs[i][1]][1]
         if codeath<cobirth:
            dimension = len(sorted_simplices[len_minus_one-pairs[i][1]][0])-1
-           scaled_pairs.append([codeath,cobirth,dimension])
+           scaled_pairs.append([codeath,cobirth,dimension])        
+    
 
     #add in the intervals with endpoint inf
     #To do this, we first construct an array paired_indices such that
@@ -236,13 +238,52 @@ if __name__ ==  '__main__':
     # example, based on the four-element point cloud (0,0),(0,1),(1,0),(1,1)
     #note that we approximate sqrt(2) by 1.4.
     
-    my_dist_mat = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]
-    #my_dist_mat = [[0,1,1],[1,0,1],[1,1,0]]   
+    dist_mat_1 = [[0,1,1,1.4],[1,0,1.4,1],[1,1.4,0,1],[1.4,1,1,0]]
+      
+    dist_mat_2 = \
+    [[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], \
+     [85, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0], \
+     [120,48,0,0,0,0,0,0,0,0,0,0,0,0,0,0], \
+     [10, 73, 44,0,0,0,0,0,0,0,0,0,0,0,0,0], \
+     [37, 47, 76, 42,0,0,0,0,0,0,0,0,0,0,0,0], \
+     [14,104,116, 97, 58,0,0,0,0,0,0,0,0,0,0,0], \
+     [57,111, 78, 93, 22, 46,0,0,0,0,0,0,0,0,0,0], \
+     [91, 55, 45, 56,107,  7, 23,0,0,0,0,0,0,0,0,0], \
+     [62,105, 81, 72, 94, 34, 52, 30,0,0,0,0,0,0,0,0], \
+     [77,117, 17,103, 19, 28, 99, 29, 89,0,0,0,0,0,0,0], \
+     [108,101, 43, 25, 53, 65, 40, 98, 75, 13,0,0,0,0,0,0], \
+     [51, 92,112, 36,100,115,  2, 82, 70, 32, 38,0,0,0,0,0], \
+     [12, 90, 24, 68, 86, 64,  8, 59, 49, 69,114,  3,0,0,0,0], \
+     [95, 35, 61, 15, 71, 31, 74, 41,  5,  4, 16, 84, 50,0,0,0], \
+     [27,102, 87, 39,118,109, 21, 11,  9, 83, 88, 80, 60, 66,0,0], \
+     [18, 54, 67, 79, 26, 96,  6, 20, 63,  1, 33,110,113,106,119,0]
+    ]
+    
+    dist_mat_3=[\
+                [0, 0, 0,  0, 0],\
+                [8, 0, 0,  0, 0],\
+                [2, 4, 0,  0, 0],\
+                [3, 10,1,  0, 0],\
+                [16,11,9,  10,0]]
+
     my_inf=float('inf')
-    pairs_with_dim = rips_filtration(4,my_inf,my_dist_mat)
+#    pairs_with_dim = rips_filtration(4,my_inf,dist_mat_1)
+#    sorted_pairs = sorted(map(tuple, list(pairs_with_dim)))
+#    print("\nThere are %d persistence pairs: " % len(pairs_with_dim))
+#    for triplet in pairs_with_dim:
+#        print("Birth: ",triplet[0],", Death: ",triplet[1], type(triplet[1]), ", Dimension: ",triplet[2])
+        
+    pairs_with_dim = rips_filtration(2,my_inf,dist_mat_2)
     sorted_pairs = sorted(map(tuple, list(pairs_with_dim)))
     print("\nThere are %d persistence pairs: " % len(pairs_with_dim))
     for triplet in pairs_with_dim:
-        print("Birth: ",triplet[0],", Death: ",triplet[1], type(triplet[1]), ", Dimension: ",triplet[2])
+        print("Birth: ",triplet[0],", Death: ",triplet[1], type(triplet[1]), ", Dimension: ",triplet[2])    
+        
+    pairs_with_dim = rips_filtration(2,my_inf,dist_mat_3)
+    sorted_pairs = sorted(map(tuple, list(pairs_with_dim)))
+    print("\nThere are %d persistence pairs: " % len(pairs_with_dim))
+    for triplet in pairs_with_dim:
+        print("Birth: ",triplet[0],", Death: ",triplet[1], type(triplet[1]), ", Dimension: ",triplet[2])       
+        
     #print(sorted_pairs)
     #assert(sorted_pairs == [(0, 1, 1), (0, 1, 1), (0, 1.4, 1), (0, float('inf'), 0), (1, 1.4, 1), (1, 1.4, 1)])
