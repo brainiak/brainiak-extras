@@ -46,20 +46,29 @@ import phat
 import typecheck as tc
 import typing as tg
 
+def lower_neighbors(dist_Mat,max_Scale):
+    LN=[]
+    for i in range(np.shape(dist_Mat)[0]):
+        LN_List=[]
+        for j in range(i):
+            if dist_Mat[i][j]<=max_Scale:
+                LN_List.append(j)
+        LN.append(LN_List)
+    return LN
 
 # To prepare for construction of the boundary matrices, first convert dist_mat
 # into a column-sparse lower triangular incidence matrix N for the
 # max_scale-thresholded neighborhood graph
 
-def lower_neighbors(dist_mat, max_scale):
-    d = np.tril(dist_mat)
-    # TODO: what about when there are points that actually have distance 0?
-    d[d > max_scale] = 0
-    # TODO: use csc_matrix instead of lists?
-    result = [[] for i in range(d.shape[0])]
-    for k, v in np.transpose(d.nonzero()):
-        result[k].append(v)
-    return result
+# def lower_neighbors(dist_mat, max_scale):
+#     d = np.tril(dist_mat)
+#     # TODO: what about when there are points that actually have distance 0?
+#     d[d > max_scale] = 0
+#     # TODO: use csc_matrix instead of lists?
+#     result = [[] for i in range(d.shape[0])]
+#     for k, v in np.transpose(d.nonzero()):
+#         result[k].append(v)
+#     return result
 
 
 # helper function for rips_filtration

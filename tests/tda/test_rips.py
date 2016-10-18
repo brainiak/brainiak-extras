@@ -26,8 +26,28 @@ def assert_barcodes(mat, dim, scale, barcodes):
     assert pairs_with_dim == barcodes
 
 
+def reference_lower_neighbors(dist_Mat,max_Scale):
+    LN=[]
+    for i in range(np.shape(dist_Mat)[0]):
+        LN_List=[]
+        for j in range(i):
+            if dist_Mat[i][j]<=max_Scale:
+                LN_List.append(j)
+        LN.append(LN_List)
+    return LN
+
+dist_mat_1 = [[0,   1,   1,   1.4],
+              [1,   0,   1.4, 1],
+              [1,   1.4, 0,   1],
+              [1.4, 1,   1,   0]]
+
+def test_lower_neighbors_inf():
+    assert lower_neighbors(dist_mat_1, inf) == reference_lower_neighbors(dist_mat_1, inf)
+
+def test_lower_neighbors_partial():
+    assert lower_neighbors(dist_mat_1, 1) == reference_lower_neighbors(dist_mat_1, 1)
+
 def test_dist_mat_1():
-    dist_mat_1 = [[0, 1, 1, 1.4], [1, 0, 1.4, 1], [1, 1.4, 0, 1], [1.4, 1, 1, 0]]
     assert_barcodes(dist_mat_1, 2, inf,
                     [(1, 1.4, 1),
                      (0, 1, 0),
