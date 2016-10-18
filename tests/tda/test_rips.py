@@ -47,6 +47,12 @@ def test_lower_neighbors_inf():
 def test_lower_neighbors_partial():
     assert lower_neighbors(dist_mat_1, 1) == reference_lower_neighbors(dist_mat_1, 1)
 
+def test_lower_neighbors_zero():
+    d = np.array(dist_mat_1)
+    d[3][0] = 0
+    d[0][3] = 0
+    assert lower_neighbors(d, inf) == reference_lower_neighbors(d, inf)
+
 def test_dist_mat_1():
     assert_barcodes(dist_mat_1, 2, inf,
                     [(1, 1.4, 1),
