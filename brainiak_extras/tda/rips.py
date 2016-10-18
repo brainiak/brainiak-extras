@@ -172,7 +172,8 @@ def numpy_2d_float(x):
     return isinstance(x, (np.ndarray, np.generic)) and len(x.shape) == 2 and x.dtype in (np.float32, np.float64)
 
 
-array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))), numpy_2d_float)
+array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))), numpy_2d_float,
+                       sp.lil_matrix, sp.csc_matrix, sp.csr_matrix)
 
 
 @tc.typecheck
