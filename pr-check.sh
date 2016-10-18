@@ -21,9 +21,9 @@
 
 set -e
 
-if [ ! -f brainiak/__init__.py ]
+if [ ! -f brainiak_extras/__init__.py ]
 then
-    echo "Run "$(basename "$0")" from the root of the BrainIAK repository"
+    echo "Run "$(basename "$0")" from the root of the BrainIAK-extras repository"
     exit 1
 fi
 
@@ -109,8 +109,8 @@ $activate_venv $venv || {
 }
 
 # install brainiak in editable mode (required for testing)
-pip3 install $ignore_installed -U -e . || \
-    exit_with_error_and_venv "pip3 failed to install BrainIAK"
+pip3 install --process-dependency-links $ignore_installed -U -e . || \
+    exit_with_error_and_venv "pip3 failed to install BrainIAK-extras"
 
 # install developer dependencies
 pip3 install $ignore_installed -U -r requirements-dev.txt || \

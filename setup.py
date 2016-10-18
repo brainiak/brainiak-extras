@@ -104,12 +104,13 @@ setup(
     name='brainiak-extras',
     version=__version__,
     install_requires=[
-        'brainiak',
         'scikit-learn',
         'scipy',
         'pybind11>=1.7',
-        'phat'
+        'phat>=0.1',
+        'typecheck-decorator'
     ],
+    dependency_links=['git+https://bitbucket.org/xoltar/phat@python-pr#egg=phat-0.1&subdirectory=python'],
     author='Princeton Neuroscience Institute and Intel Corporation',
     author_email='bryn.keller@intel.com',
     url='https://github.com/IntelPNI/brainiak',

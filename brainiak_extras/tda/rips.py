@@ -36,7 +36,7 @@ More details: This code is designed to work with Bryn Keller's Python wrapper
 for PHAT, the persistent homology code written by Ulrich Bauer, Michael Kerber,
 Jan Reininghaus, and Hubert Wagner, available at
 https://bitbucket.org/phat-code/phat. The approach to building the filtration
-is based on the ``Incremental Algorithm" described in the paper ``Fast
+is based on the "Incremental Algorithm" described in the paper "Fast
 Construction of the Vietoris-Rips Complex" by Afra Zomorodian. In the case that
 we are building the whole Vietoris-Rips filtration, this is not the most
 efficient approach, but may be good enough for the purposes of this wrapper.
@@ -199,7 +199,7 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
     """
     Builds a boundary matrix for the boundary-Rips filtration up to dimension
     `max_dim`. Also builds the corresponding list of bigrades follows closely
-    the ``incremental algorithm" in the paper on fast Vietoris-Rips comptuation
+    the "incremental algorithm" in the paper on fast Vietoris-Rips comptuation
     by Zomorodian, with some modification to store boundary matrix and
     filtration info. That in turn is based on a version of Bron-Kerbosch algorithm.
 
