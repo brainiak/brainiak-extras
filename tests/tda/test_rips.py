@@ -11,7 +11,8 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-from brainiak_extras.tda.rips import *
+from brainiak_extras.tda.rips import rips_filtration, _lower_neighbors
+import numpy as np
 
 inf = float('inf')
 
@@ -42,16 +43,16 @@ dist_mat_1 = [[0,   1,   1,   1.4],
               [1.4, 1,   1,   0]]
 
 def test_lower_neighbors_inf():
-    assert lower_neighbors(dist_mat_1, inf) == reference_lower_neighbors(dist_mat_1, inf)
+    assert _lower_neighbors(dist_mat_1, inf) == reference_lower_neighbors(dist_mat_1, inf)
 
 def test_lower_neighbors_partial():
-    assert lower_neighbors(dist_mat_1, 1) == reference_lower_neighbors(dist_mat_1, 1)
+    assert _lower_neighbors(dist_mat_1, 1) == reference_lower_neighbors(dist_mat_1, 1)
 
 def test_lower_neighbors_zero():
     d = np.array(dist_mat_1)
     d[3][0] = 0
     d[0][3] = 0
-    assert lower_neighbors(d, inf) == reference_lower_neighbors(d, inf)
+    assert _lower_neighbors(d, inf) == reference_lower_neighbors(d, inf)
 
 def test_dist_mat_1():
     assert_barcodes(dist_mat_1, 2, inf,

@@ -46,12 +46,12 @@ import phat
 import typecheck as tc
 import sys
 import scipy.sparse as sp
-import typing as tg
+
 
 # To prepare for construction of the boundary matrices, first convert dist_mat
 # into a column-sparse lower triangular incidence matrix N for the
 # max_scale-thresholded neighborhood graph
-def lower_neighbors(dist_mat, max_scale):
+def _lower_neighbors(dist_mat, max_scale):
     d = sp.lil_matrix(dist_mat)
     d[d == 0] = sys.float_info.epsilon
     d[np.diag_indices(d.shape[0])] = 0
@@ -64,7 +64,7 @@ def lower_neighbors(dist_mat, max_scale):
 
 
 # helper function for rips_filtration
-def add_cofaces(lower_neighbors, max_dim, dist_mat, start):
+def _add_cofaces(lower_neighbors, max_dim, dist_mat, start):
     # TODO: iterative implementation (maybe), since Python doesn't have tailcall elimination
     simplices = []
 
@@ -84,7 +84,7 @@ def add_cofaces(lower_neighbors, max_dim, dist_mat, start):
     return simplices
 
 
-def faces(tau):
+def _faces(tau):
     for i in tau:
         tau_hat = tau[:]
         tau_hat.remove(i)
@@ -92,21 +92,18 @@ def faces(tau):
 
 
 def gte_zero(n):
+    """Type predicate: greater than or equal to zero"""
     return n >= 0
 
 
 def gt_zero(n):
+    """Type predicate: greater than zero"""
     return n > 0
 
 
-# TODO: some of the indexing in this piece of code and the next is a bit convoluted:
-# I build the sorted list of simplices, then reverse it
-# Then I build the coboundary matrix in reverse order of the columns.
-# I wonder if these could be simplified a little bit.
-
-def rips_simplices(max_dim, max_scale, dist_mat):
-    LN = lower_neighbors(dist_mat, max_scale)
-    simplices = np.concatenate([add_cofaces(LN, max_dim, dist_mat, u)
+def _rips_simplices(max_dim, max_scale, dist_mat):
+    LN = _lower_neighbors(dist_mat, max_scale)
+    simplices = np.concatenate([_add_cofaces(LN, max_dim, dist_mat, u)
                                 for u in range(len(dist_mat))])
 
     # now, sort the simplices to put them in reverse filtration order.  The following line
@@ -120,7 +117,7 @@ def rips_simplices(max_dim, max_scale, dist_mat):
     return sorted_simplices
 
 
-def create_coboundary_matrix(sorted_simplices, max_dim):
+def _create_coboundary_matrix(sorted_simplices, max_dim):
     # now that the simplices are sorted, expand the list into a coboundary matrix.
     # For this, we use a Python dictionary, i.e. hash table.
     # Keys are simplices, represented as tuples of vectors, and values are simplex indices.
@@ -157,7 +154,7 @@ def create_coboundary_matrix(sorted_simplices, max_dim):
         # note how this uses the dictionary
 
         if len(tau) > 1:
-            for tau_hat in faces(tau):
+            for tau_hat in _faces(tau):
                 cobdy_matrix_pre[simplex_index_dict[tau_hat]][1].append(curr_index)
 
                 # finally we sort each column of the coboundary matrix.
@@ -169,9 +166,11 @@ def create_coboundary_matrix(sorted_simplices, max_dim):
 
 
 def numpy_2d_float(x):
+    """Type predicate: a numpy array containing floating point values"""
     return isinstance(x, (np.ndarray, np.generic)) and len(x.shape) == 2 and x.dtype in (np.float32, np.float64)
 
 
+"""Type predicate: something like a 2D array"""
 array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))), numpy_2d_float,
                        sp.lil_matrix, sp.csc_matrix, sp.csr_matrix)
 
@@ -207,9 +206,9 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
         lists represents one interval of in barcode and has the form
         [birth,death,dimension]
     """
-    sorted_simplices = rips_simplices(max_dim, max_scale, dist_mat)
+    sorted_simplices = _rips_simplices(max_dim, max_scale, dist_mat)
     len_minus_one = len(sorted_simplices) - 1
-    cobdy_matrix_pre = create_coboundary_matrix(sorted_simplices, max_dim)
+    cobdy_matrix_pre = _create_coboundary_matrix(sorted_simplices, max_dim)
     # print(cobdy_matrix_pre);
 
     # print(sorted_simplices)
