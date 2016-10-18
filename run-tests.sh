@@ -14,10 +14,23 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-pip freeze | grep -qi /brainiak || {
-    echo "You must install brainiak in editable mode using \"pip install -e\""`
+set -e
+
+pip freeze | grep -qi /brainiak-extras || {
+    echo "You must install brainiak-extras in editable mode using \"pip install -e\""`
         `" before calling "$(basename "$0")
     exit 1
 }
 
-py.test --cov=brainiak
+mpi_command=mpiexec
+
+if [ ! -z $SLURM_NODELIST ]
+then
+    mpi_command=srun
+fi
+
+$mpi_command -n 2 coverage run -m pytest
+coverage combine
+coverage report
+coverage html
+coverage xml

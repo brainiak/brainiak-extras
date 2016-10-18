@@ -227,7 +227,7 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
         codeath = sorted_simplices[len_minus_one - pairs[i][1]][1]
         if codeath < cobirth:
             dimension = len(sorted_simplices[len_minus_one - pairs[i][1]][0]) - 1
-            scaled_pairs.append([codeath, cobirth, dimension])
+            scaled_pairs.append((codeath, cobirth, dimension))
 
 
             # add in the intervals with endpoint inf
@@ -243,7 +243,7 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
         if paired_indices[i] == 0:
             birth = sorted_simplices[len_minus_one - i][1]
             dimension = len(sorted_simplices[len_minus_one - i][0]) - 1
-            scaled_pairs.append([birth, float("inf"), dimension])
+            scaled_pairs.append((birth, float("inf"), dimension))
     return scaled_pairs
 
 
