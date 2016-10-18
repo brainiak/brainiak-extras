@@ -45,19 +45,18 @@ import numpy as np
 import phat
 import typecheck as tc
 import sys
+import scipy.sparse as sp
 import typing as tg
 
 # To prepare for construction of the boundary matrices, first convert dist_mat
 # into a column-sparse lower triangular incidence matrix N for the
 # max_scale-thresholded neighborhood graph
 def lower_neighbors(dist_mat, max_scale):
-    d = np.array(dist_mat).copy()
+    d = sp.lil_matrix(dist_mat)
     d[d == 0] = sys.float_info.epsilon
-    d[np.diag_indices_from(d)] = 0
-    d = np.tril(d)
+    d[np.diag_indices(d.shape[0])] = 0
     d[d > max_scale] = 0
-    print(d)
-    # TODO: use csc_matrix instead of lists?
+    d = sp.tril(d)
     result = [[] for i in range(d.shape[0])]
     for k, v in np.transpose(d.nonzero()):
         result[k].append(v)
