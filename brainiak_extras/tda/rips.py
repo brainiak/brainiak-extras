@@ -55,20 +55,45 @@ the boundary matrix.) In this case, it seems slightly nicer to just compute the
 coboundary matrix directly, and input this to the PHAT wrapper; this is what we
 do.
 
-Example usage:
-COMING SOON, ALSO SEE BELOW IN THIS VERY FILE
 """
 import numpy as np
 import phat
+# typecheck comes from "typecheck-decorators", which confuses PyCharm.
+# noinspection PyPackageRequirements
 import typecheck as tc
 import sys
 import scipy.sparse as sp
+import types
+import collections
 
 
-# To prepare for construction of the boundary matrices, first convert dist_mat
-# into a column-sparse lower triangular incidence matrix N for the
-# max_scale-thresholded neighborhood graph
-def _lower_neighbors(dist_mat, max_scale):
+def numpy_2d_float(x):
+    """Type predicate: a numpy array containing floating point values"""
+    return isinstance(x, (np.ndarray, np.generic)) and len(x.shape) == 2 and x.dtype in (np.float32, np.float64)
+
+
+"""Type predicate: something like a 2D array"""
+array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))), numpy_2d_float,
+                       sp.lil_matrix, sp.csc_matrix, sp.csr_matrix)
+
+
+@tc.typecheck
+def _lower_neighbors(dist_mat: array_like_2d, max_scale: tc.any(int, float)) -> tc.list_of(tc.list_of(np.int32)):
+    """
+    Converts a square, possibly lower triangular, distance matrix into a list of lists of neighbor indices,
+    for neighbors up to the specified scale.
+
+    Parameters
+    ----------
+    dist_mat: 2D array
+        the distance matrix, which may be lower triangular
+    max_scale: float
+        the highest scale (distance) to consider
+
+    Returns
+    -------
+    neighbors: list of lists of int
+    """
     d = sp.lil_matrix(dist_mat)
     d[d == 0] = sys.float_info.epsilon
     d[np.diag_indices(d.shape[0])] = 0
@@ -80,8 +105,27 @@ def _lower_neighbors(dist_mat, max_scale):
     return result
 
 
-# helper function for rips_filtration
-def _add_cofaces(lower_neighbors, max_dim, dist_mat, start):
+@tc.typecheck
+def _add_cofaces(lower_neighbors: tc.list_of(tc.list_of(np.int32)),
+                 max_dim: int,
+                 dist_mat: array_like_2d, start: int):
+    """
+    Returns all the cofaces for the given start (where cofaces are represented by lists of indices),
+    paired with their stepwise distance from the start node.
+
+    Parameters
+    ----------
+    lower_neighbors: list of lists of int
+        neighbors for each index, as returned by the `_lower_neighbors` function
+    max_dim: int
+        the largest simplex dimension to consider
+    dist_mat: 2D array
+        the distance matrix, which may be lower triangular
+
+    Returns
+    -------
+    simplices: list of (coface, distance) pairs
+    """
     # TODO: iterative implementation (maybe), since Python doesn't have tailcall elimination
     simplices = []
 
@@ -101,7 +145,20 @@ def _add_cofaces(lower_neighbors, max_dim, dist_mat, start):
     return simplices
 
 
-def _faces(tau):
+@tc.typecheck
+def _faces(tau: collections.Sequence) -> types.GeneratorType:
+    """
+    Returns all faces (sublists with one element deleted) of tau.
+
+    Parameters
+    ----------
+    tau: list of int
+        a simplex
+
+    Returns
+    -------
+    faces: list of list of int
+    """
     for i in tau:
         tau_hat = tau[:]
         tau_hat.remove(i)
@@ -118,7 +175,24 @@ def gt_zero(n):
     return n > 0
 
 
-def _rips_simplices(max_dim, max_scale, dist_mat):
+@tc.typecheck
+def _rips_simplices(max_dim: int, max_scale: float, dist_mat: array_like_2d):
+    """
+    Creates simplices from a distance matrix.
+
+    Parameters
+    ----------
+    max_dim: int
+        the largest simplex dimension to consider
+    dist_mat: 2D array
+        the distance matrix, which may be lower triangular
+    max_scale: float
+        the highest scale (distance) to consider
+
+    Returns
+    -------
+    simplices: 2d int matrix
+    """
     LN = _lower_neighbors(dist_mat, max_scale)
     simplices = np.concatenate([_add_cofaces(LN, max_dim, dist_mat, u)
                                 for u in range(len(dist_mat))])
@@ -182,16 +256,6 @@ def _create_coboundary_matrix(sorted_simplices, max_dim):
     return cobdy_matrix_pre
 
 
-def numpy_2d_float(x):
-    """Type predicate: a numpy array containing floating point values"""
-    return isinstance(x, (np.ndarray, np.generic)) and len(x.shape) == 2 and x.dtype in (np.float32, np.float64)
-
-
-"""Type predicate: something like a 2D array"""
-array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))), numpy_2d_float,
-                       sp.lil_matrix, sp.csc_matrix, sp.csr_matrix)
-
-
 @tc.typecheck
 def rips_filtration(max_dim: tc.all(int, gte_zero),
                     max_scale: tc.all(tc.any(int, float), gt_zero),
@@ -211,8 +275,8 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
     max_scale: float
         the highest scale (distance) to consider
     dist_mat: 2D array
-        an n x n distance matrix (such as produced by
-        scipy.spatial.distance.pdist), which may be lower-triangular.
+        an n x n distance matrix, which may be lower-triangular.
+
     Returns
     -------
 
@@ -263,4 +327,3 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
             dimension = len(sorted_simplices[len_minus_one - i][0]) - 1
             scaled_pairs.append((birth, float("inf"), dimension))
     return scaled_pairs
-
