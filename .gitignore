@@ -6,7 +6,7 @@
 *.lib
 *.o
 
-brainiak.egg-info
+*.egg-info
 build
 .cache
 .coverage
@@ -18,3 +18,7 @@ htmlcov
 .idea
 .ipynb_checkpoints
 junit-*.xml
+src
+_build
+__pycache__
+var/
