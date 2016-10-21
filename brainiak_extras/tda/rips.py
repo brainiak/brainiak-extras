@@ -80,7 +80,9 @@ array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))), numpy_2d_floa
 @tc.typecheck
 def _lower_neighbors(dist_mat: array_like_2d, max_scale: tc.any(int, float)) -> tc.list_of(tc.list_of(np.int32)):
     """
-    Converts a square, possibly lower triangular, distance matrix into a list of lists of neighbor indices,
+    Converts a distance matrix to neighbor information.
+
+    Takes a square, possibly lower triangular, and returns a list of lists of neighbor indices,
     for neighbors up to the specified scale.
 
     Parameters
@@ -110,8 +112,9 @@ def _add_cofaces(lower_neighbors: tc.list_of(tc.list_of(np.int32)),
                  max_dim: int,
                  dist_mat: array_like_2d, start: int):
     """
-    Returns all the cofaces for the given start (where cofaces are represented by lists of indices),
-    paired with their stepwise distance from the start node.
+    Returns all cofaces for the given start node.
+
+    Cofaces are represented by lists of indices, paired with their stepwise distance from the start node.
 
     Parameters
     ----------
@@ -209,6 +212,20 @@ def _rips_simplices(max_dim: int, max_scale: float, dist_mat: array_like_2d):
 
 
 def _create_coboundary_matrix(sorted_simplices, max_dim):
+    """
+    Creates a coboundary matrix for the given simplices.
+
+    Parameters
+    ----------
+    sorted_simplices: list of simplices
+        The simplices, in colex order
+    max_dim: int
+        the largest simplex dimension to consider
+
+    Returns
+    -------
+    coboundaries: 2d int list
+    """
     # now that the simplices are sorted, expand the list into a coboundary matrix.
     # For this, we use a Python dictionary, i.e. hash table.
     # Keys are simplices, represented as tuples of vectors, and values are simplex indices.
