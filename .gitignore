@@ -20,10 +20,5 @@ htmlcov
 junit-*.xml
 src
 _build
-
-/htmlcov/
-/src/
-brainiak_extras/__pycache__/
-brainiak_extras/tda/__pycache__/
-tests/tda/__pycache__/
+__pycache__
 var/
