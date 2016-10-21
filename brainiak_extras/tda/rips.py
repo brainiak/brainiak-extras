@@ -278,8 +278,9 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
                     max_scale: tc.all(tc.any(int, float), gt_zero),
                     dist_mat: array_like_2d):
     """
-    Builds a boundary matrix for the boundary-Rips filtration up to dimension
-    `max_dim`. Also builds the corresponding list of bigrades follows closely
+    Builds a boundary matrix for the boundary-Rips filtration up to dimension `max_dim`.
+
+    Also builds the corresponding list of bigrades follows closely
     the "incremental algorithm" in the paper on fast Vietoris-Rips comptuation
     by Zomorodian, with some modification to store boundary matrix and
     filtration info. That in turn is based on a version of Bron-Kerbosch algorithm.
