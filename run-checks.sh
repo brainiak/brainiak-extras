@@ -17,8 +17,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with brainiak-extras.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
+set -ev
 set -o pipefail
 
-flake8 --config setup.cfg brainiak
+flake8 --config setup.cfg brainiak_extras
 rst-lint *.rst | { grep -v "is clean.$" || true; }

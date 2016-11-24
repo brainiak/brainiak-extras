@@ -69,21 +69,28 @@ import collections
 
 def numpy_2d_float(x):
     """Type predicate: a numpy array containing floating point values"""
-    return isinstance(x, (np.ndarray, np.generic)) and len(x.shape) == 2 and x.dtype in (np.float32, np.float64)
+    return isinstance(x, (np.ndarray, np.generic)) \
+        and len(x.shape) == 2 \
+        and x.dtype in (np.float32, np.float64)
 
 
 """Type predicate: something like a 2D array"""
-array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))), numpy_2d_float,
-                       sp.lil_matrix, sp.csc_matrix, sp.csr_matrix)
+array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))),
+                       numpy_2d_float,
+                       sp.lil_matrix,
+                       sp.csc_matrix,
+                       sp.csr_matrix)
 
 
 @tc.typecheck
-def _lower_neighbors(dist_mat: array_like_2d, max_scale: tc.any(int, float)) -> tc.list_of(tc.list_of(np.int32)):
+def _lower_neighbors(dist_mat: array_like_2d,
+                     max_scale: tc.any(int, float)) \
+        -> tc.list_of(tc.list_of(np.int32)):
     """
     Converts a distance matrix to neighbor information.
 
-    Takes a square, possibly lower triangular, and returns a list of lists of neighbor indices,
-    for neighbors up to the specified scale.
+    Takes a square, possibly lower triangular, and returns a list
+    of lists of neighbor indices, for neighbors up to the specified scale.
 
     Parameters
     ----------
@@ -114,12 +121,14 @@ def _add_cofaces(lower_neighbors: tc.list_of(tc.list_of(np.int32)),
     """
     Returns all cofaces for the given start node.
 
-    Cofaces are represented by lists of indices, paired with their stepwise distance from the start node.
+    Cofaces are represented by lists of indices, paired with their
+    stepwise distance from the start node.
 
     Parameters
     ----------
     lower_neighbors: list of lists of int
-        neighbors for each index, as returned by the `_lower_neighbors` function
+        neighbors for each index, as returned by the
+        `_lower_neighbors` function
     max_dim: int
         the largest simplex dimension to consider
     dist_mat: 2D array
@@ -129,7 +138,8 @@ def _add_cofaces(lower_neighbors: tc.list_of(tc.list_of(np.int32)),
     -------
     simplices: list of (coface, distance) pairs
     """
-    # TODO: iterative implementation (maybe), since Python doesn't have tailcall elimination
+    # TODO: iterative implementation (maybe), since Python
+    # doesn't have tailcall elimination
     simplices = []
 
     def coface(tau, tau_dist, N):
@@ -200,11 +210,12 @@ def _rips_simplices(max_dim: int, max_scale: float, dist_mat: array_like_2d):
     simplices = np.concatenate([_add_cofaces(LN, max_dim, dist_mat, u)
                                 for u in range(len(dist_mat))])
 
-    # now, sort the simplices to put them in reverse filtration order.  The following line
-    # gives a valid filtration order because the python sort is stable and the
-    # above method for constructing the filtration always adds a simplex after
-    # its lower-dimensional faces
-    sorted_simplices = sorted(simplices, key=lambda labeled_simplex: labeled_simplex[1])
+    # now, sort the simplices to put them in reverse filtration order.
+    # The following line gives a valid filtration order because the python
+    # sort is stable and the above method for constructing the filtration
+    # always adds a simplex after its lower-dimensional faces
+    sorted_simplices = sorted(simplices,
+                              key=lambda labeled_simplex: labeled_simplex[1])
 
     # Now reverse the order to get the reverse filtration order.
 
@@ -226,30 +237,33 @@ def _create_coboundary_matrix(sorted_simplices, max_dim):
     -------
     coboundaries: 2d int list
     """
-    # now that the simplices are sorted, expand the list into a coboundary matrix.
-    # For this, we use a Python dictionary, i.e. hash table.
-    # Keys are simplices, represented as tuples of vectors, and values are simplex indices.
-    # We build the dictionary as we build the boundary matrix
+    # now that the simplices are sorted, expand the list into a coboundary
+    # matrix. For this, we use a Python dictionary, i.e. hash table.
+    # Keys are simplices, represented as tuples of vectors, and values are
+    # simplex indices. We build the dictionary as we build the boundary matrix
 
-    # this will be our coboundary matrix. simplex dimensions are also stored, as
-    # per the convention of PHAT and the PHAT wrapper.
+    # this will be our coboundary matrix. simplex dimensions are also stored,
+    # as per the convention of PHAT and the PHAT wrapper.
     cobdy_matrix_pre = []
 
     # this will be our dictionary
     simplex_index_dict = {}
 
-    # This builds the dictionary and initializes each column in cobdy_matrix_pre to an empty column,
-    # with the appropriate dimension
+    # This builds the dictionary and initializes each column in
+    # cobdy_matrix_pre to an empty column, with the appropriate dimension
     for i, (tau, _) in enumerate(sorted_simplices):
-        # add each simplex tau together with its associated index to the dictionary.
-        # if there are j simplices added already, we take the new simplex to have index j.
+        # add each simplex tau together with its associated index to the
+        # dictionary. If there are j simplices added already, we take the
+        # new simplex to have index j.
         curr_index = len(sorted_simplices) - 1 - i
         simplex_index_dict[tuple(tau)] = curr_index
         # get the dimension of tau
 
         # note: PHAT requires each column to be labelled with an index.
-        # The extra indices are needed to specify the order in which columns are handled when using the twist optimization.
-        # in the case of ordinary homology, this extra index is jsut the dimension of the corresponding simplex, but in cohomology it is the
+        # The extra indices are needed to specify the order in which columns
+        # are handled when using the twist optimization.
+        # in the case of ordinary homology, this extra index is just the
+        # dimension of the corresponding simplex, but in cohomology it is the
         # codimension", as defined in the following line of code.
         codim_tau = max_dim - (len(tau) - 1)
         # add a column in cobdy_matrx corresponding to tau, initially empty.
@@ -258,12 +272,13 @@ def _create_coboundary_matrix(sorted_simplices, max_dim):
     # now we add in all of the column entries
     for i, (tau, _) in enumerate(sorted_simplices):
         curr_index = len(sorted_simplices) - 1 - i
-        # for each face sigma of tau, add an entry corresponding to tau into the coboundary column of sigma.
-        # note how this uses the dictionary
+        # for each face sigma of tau, add an entry corresponding to tau into
+        # the coboundary column of sigma. Note how this uses the dictionary.
 
         if len(tau) > 1:
             for tau_hat in _faces(tau):
-                cobdy_matrix_pre[simplex_index_dict[tau_hat]][1].append(curr_index)
+                cobdy_matrix_pre[simplex_index_dict[tau_hat]][1]\
+                    .append(curr_index)
 
                 # finally we sort each column of the coboundary matrix.
 
@@ -278,12 +293,14 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
                     max_scale: tc.all(tc.any(int, float), gt_zero),
                     dist_mat: array_like_2d):
     """
-    Builds a boundary matrix for the boundary-Rips filtration up to dimension `max_dim`.
+    Builds a boundary matrix for the boundary-Rips filtration up to dimension
+     `max_dim`.
 
     Also builds the corresponding list of bigrades follows closely
     the "incremental algorithm" in the paper on fast Vietoris-Rips comptuation
     by Zomorodian, with some modification to store boundary matrix and
-    filtration info. That in turn is based on a version of Bron-Kerbosch algorithm.
+    filtration info. That in turn is based on a version of Bron-Kerbosch
+    algorithm.
 
     Parameters
     ----------
@@ -300,10 +317,10 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
 
     pairs: list of (column, grade) pairs
         The barcodes up to dimension max_dim, for the truncated Vietoris-Rips
-        filtration, including only simplices whose index of appearance is <= max_scale
-        The barcodes are output as a list of three-element lists. Each three-element
-        lists represents one interval of in barcode and has the form
-        [birth,death,dimension]
+        filtration, including only simplices whose index of appearance
+        is <= max_scale. The barcodes are output as a list of three-element
+        lists. Each three-element lists represents one interval of in barcode
+        and has the form [birth,death,dimension]
     """
     sorted_simplices = _rips_simplices(max_dim, max_scale, dist_mat)
     len_minus_one = len(sorted_simplices) - 1
@@ -313,27 +330,29 @@ def rips_filtration(max_dim: tc.all(int, gte_zero),
     # print(sorted_simplices)
     # print(bdy_matrix_pre)
 
-    cobdy_matrix = phat.boundary_matrix(representation=phat.representations.bit_tree_pivot_column)
+    cobdy_matrix = phat.boundary_matrix(
+        representation=phat.representations.bit_tree_pivot_column)
     cobdy_matrix.columns = cobdy_matrix_pre
 
     # call Bryn's PHAT wrapper for the persistence computation
     pairs = cobdy_matrix.compute_persistence_pairs()
 
-    # next, rescale the pairs to their original filtration values, eliminating pairs with the same birth and death time.
-    # In keeping with our chosen output format, we also add the dimension to the pair.
+    # next, rescale the pairs to their original filtration values, eliminating
+    # pairs with the same birth and death time. In keeping with our chosen
+    # output format, we also add the dimension to the pair.
     scaled_pairs = []
     for i in range(len(pairs)):
         cobirth = sorted_simplices[len_minus_one - pairs[i][0]][1]
         codeath = sorted_simplices[len_minus_one - pairs[i][1]][1]
         if codeath < cobirth:
-            dimension = len(sorted_simplices[len_minus_one - pairs[i][1]][0]) - 1
+            dimension = len(
+                sorted_simplices[len_minus_one - pairs[i][1]][0]) - 1
             scaled_pairs.append((codeath, cobirth, dimension))
 
-
-            # add in the intervals with endpoint inf
+    # add in the intervals with endpoint inf
     # To do this, we first construct an array paired_indices such that
-    # if the j^th simplex (in the coboundary order) appears in a pair, paired_incides[j] = 1
-    # otherwise paired_incides[j] = 0.
+    # if the j^th simplex (in the coboundary order) appears in a pair,
+    # paired_indices[j] = 1 otherwise paired_incides[j] = 0.
 
     paired_indices = np.zeros(len(sorted_simplices))
     for i in range(len(pairs)):
