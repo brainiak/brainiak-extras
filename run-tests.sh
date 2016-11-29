@@ -18,7 +18,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with brainiak-extras.  If not, see <http://www.gnu.org/licenses/>.
 
-set -e
+set -ev
 
 pip freeze | grep -qi /brainiak-extras || {
     echo "You must install brainiak-extras in editable mode using \"pip install -e\""`
@@ -27,14 +27,24 @@ pip freeze | grep -qi /brainiak-extras || {
 }
 
 mpi_command=mpiexec
-
 if [ ! -z $SLURM_NODELIST ]
 then
     mpi_command=srun
 fi
-
 $mpi_command -n 2 coverage run -m pytest
+
 coverage combine
-coverage report
+
+# Travis error workaround
+coverage_report=$(mktemp -u coverage_report_XXXXX) || {
+    echo "mktemp -u error" >&2;
+    exit 1;
+}
+coverage report > $coverage_report
+
 coverage html
 coverage xml
+
+set +e
+cat $coverage_report
+rm $coverage_report
