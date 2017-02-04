@@ -58,34 +58,11 @@ do.
 """
 import numpy as np
 import phat
-# typecheck comes from "typecheck-decorators", which confuses PyCharm.
-# noinspection PyPackageRequirements
-import typecheck as tc
 import sys
 import scipy.sparse as sp
-import types
-import collections
 
 
-def numpy_2d_float(x):
-    """Type predicate: a numpy array containing floating point values"""
-    return isinstance(x, (np.ndarray, np.generic)) \
-        and len(x.shape) == 2 \
-        and x.dtype in (np.float32, np.float64)
-
-
-"""Type predicate: something like a 2D array"""
-array_like_2d = tc.any(tc.list_of(tc.list_of(tc.any(int, float))),
-                       numpy_2d_float,
-                       sp.lil_matrix,
-                       sp.csc_matrix,
-                       sp.csr_matrix)
-
-
-@tc.typecheck
-def _lower_neighbors(dist_mat: array_like_2d,
-                     max_scale: tc.any(int, float)) \
-        -> tc.list_of(tc.list_of(np.int32)):
+def _lower_neighbors(dist_mat, max_scale):
     """
     Converts a distance matrix to neighbor information.
 
@@ -114,10 +91,7 @@ def _lower_neighbors(dist_mat: array_like_2d,
     return result
 
 
-@tc.typecheck
-def _add_cofaces(lower_neighbors: tc.list_of(tc.list_of(np.int32)),
-                 max_dim: int,
-                 dist_mat: array_like_2d, start: int):
+def _add_cofaces(lower_neighbors, max_dim, dist_mat, start):
     """
     Returns all cofaces for the given start node.
 
@@ -138,8 +112,8 @@ def _add_cofaces(lower_neighbors: tc.list_of(tc.list_of(np.int32)),
     -------
     simplices: list of (coface, distance) pairs
     """
-    # TODO: iterative implementation (maybe), since Python
-    # doesn't have tailcall elimination
+    # TODO: iterative implementation, maybe,
+    # since Python doesn't have tailcall elimination
     simplices = []
 
     def coface(tau, tau_dist, N):
@@ -158,8 +132,7 @@ def _add_cofaces(lower_neighbors: tc.list_of(tc.list_of(np.int32)),
     return simplices
 
 
-@tc.typecheck
-def _faces(tau: collections.Sequence) -> types.GeneratorType:
+def _faces(tau):
     """
     Returns all faces (sublists with one element deleted) of tau.
 
@@ -188,8 +161,7 @@ def gt_zero(n):
     return n > 0
 
 
-@tc.typecheck
-def _rips_simplices(max_dim: int, max_scale: float, dist_mat: array_like_2d):
+def _rips_simplices(max_dim, max_scale, dist_mat):
     """
     Creates simplices from a distance matrix.
 
@@ -288,10 +260,7 @@ def _create_coboundary_matrix(sorted_simplices, max_dim):
     return cobdy_matrix_pre
 
 
-@tc.typecheck
-def rips_filtration(max_dim: tc.all(int, gte_zero),
-                    max_scale: tc.all(tc.any(int, float), gt_zero),
-                    dist_mat: array_like_2d):
+def rips_filtration(max_dim, max_scale, dist_mat):
     """
     Builds a boundary matrix for the boundary-Rips filtration up to dimension
      `max_dim`.

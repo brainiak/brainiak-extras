@@ -109,7 +109,7 @@ $activate_venv $venv || {
 }
 
 # install brainiak in editable mode (required for testing)
-pip3 install --process-dependency-links $ignore_installed -U -e . || \
+pip3 install $ignore_installed -U -e . || \
     exit_with_error_and_venv "pip3 failed to install BrainIAK-extras"
 
 # install developer dependencies

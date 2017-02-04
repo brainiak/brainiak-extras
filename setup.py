@@ -103,13 +103,12 @@ setup(
         'setuptools_scm',
     ],
     install_requires=[
-        'scikit-learn',
+        'scikit-learn[alldeps]',
         'scipy',
         'pybind11>=1.7',
-        'phat>=0.1',
+        'phat>=1.5.0a',
         'typecheck-decorator'
     ],
-    dependency_links=['git+https://bitbucket.org/xoltar/phat@python-pr#egg=phat-0.1'],
     author='Princeton Neuroscience Institute and Intel Corporation',
     author_email='bryn.keller@intel.com',
     url='https://github.com/IntelPNI/brainiak',

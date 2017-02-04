@@ -15,7 +15,7 @@ The requirements for `brainiak-extras` are generally the same as for the `Brain 
 itself, and you should follow those instructions first. After those instructions have been completed,
 you can install using `pip3`::
 
-    pip3 install --process-dependency-links -U -e .
+    pip3 install -U -e .
 
 
 
