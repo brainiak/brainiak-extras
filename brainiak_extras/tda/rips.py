@@ -294,7 +294,7 @@ def rips_filtration(max_dim, max_scale, dist_mat):
     max_face_dim = max_dim+1
     sorted_simplices = _rips_simplices(max_face_dim, max_scale, dist_mat)
     len_minus_one = len(sorted_simplices) - 1
-    cobdy_matrix_pre = _create_coboundary_matrix(sorted_simplices, 
+    cobdy_matrix_pre = _create_coboundary_matrix(sorted_simplices,
                                                  max_face_dim)
     # print(cobdy_matrix_pre)
 
