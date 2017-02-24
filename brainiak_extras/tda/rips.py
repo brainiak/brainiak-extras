@@ -291,11 +291,12 @@ def rips_filtration(max_dim, max_scale, dist_mat):
         lists. Each three-element lists represents one interval of in barcode
         and has the form [birth,death,dimension]
     """
-    max_face_dim=max_dim+1;
+    max_face_dim = max_dim+1
     sorted_simplices = _rips_simplices(max_face_dim, max_scale, dist_mat)
     len_minus_one = len(sorted_simplices) - 1
-    cobdy_matrix_pre = _create_coboundary_matrix(sorted_simplices, max_face_dim)
-    # print(cobdy_matrix_pre);
+    cobdy_matrix_pre = _create_coboundary_matrix(sorted_simplices, 
+                                                 max_face_dim)
+    # print(cobdy_matrix_pre)
 
     # print(sorted_simplices)
     # print(bdy_matrix_pre)
@@ -332,7 +333,7 @@ def rips_filtration(max_dim, max_scale, dist_mat):
         if paired_indices[i] == 0:
             birth = sorted_simplices[len_minus_one - i][1]
             dimension = len(sorted_simplices[len_minus_one - i][0]) - 1
-            #we don't report the infinite bars in degree max_dim+1
-            if dimension<max_face_dim:
+            # we don't report the infinite bars in degree max_dim+1
+            if dimension < max_face_dim:
                 scaled_pairs.append((birth, float("inf"), dimension))
     return scaled_pairs
