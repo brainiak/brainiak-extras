@@ -91,7 +91,7 @@ def _lower_neighbors(dist_mat, max_scale):
     return result
 
 
-def _add_cofaces(lower_neighbors, max_dim, dist_mat, start):
+def _add_cofaces(lower_neighbors, max_face_dim, dist_mat, start):
     """
     Returns all cofaces for the given start node.
 
@@ -103,7 +103,7 @@ def _add_cofaces(lower_neighbors, max_dim, dist_mat, start):
     lower_neighbors: list of lists of int
         neighbors for each index, as returned by the
         `_lower_neighbors` function
-    max_dim: int
+    max_face_dim: int
         the largest simplex dimension to consider
     dist_mat: 2D array
         the distance matrix, which may be lower triangular
@@ -118,7 +118,7 @@ def _add_cofaces(lower_neighbors, max_dim, dist_mat, start):
 
     def coface(tau, tau_dist, N):
         simplices.append((tau, tau_dist))
-        if len(tau) >= max_dim + 1 or len(N) == 0:
+        if len(tau) >= max_face_dim + 1 or len(N) == 0:
             return
         else:
             for v in N:
@@ -194,7 +194,7 @@ def _rips_simplices(max_dim, max_scale, dist_mat):
     return sorted_simplices
 
 
-def _create_coboundary_matrix(sorted_simplices, max_dim):
+def _create_coboundary_matrix(sorted_simplices, max_face_dim):
     """
     Creates a coboundary matrix for the given simplices.
 
@@ -202,7 +202,7 @@ def _create_coboundary_matrix(sorted_simplices, max_dim):
     ----------
     sorted_simplices: list of simplices
         The simplices, in colex order
-    max_dim: int
+    max_face_dim: int
         the largest simplex dimension to consider
 
     Returns
@@ -237,7 +237,7 @@ def _create_coboundary_matrix(sorted_simplices, max_dim):
         # in the case of ordinary homology, this extra index is just the
         # dimension of the corresponding simplex, but in cohomology it is the
         # codimension", as defined in the following line of code.
-        codim_tau = max_dim - (len(tau) - 1)
+        codim_tau = max_face_dim - (len(tau) - 1)
         # add a column in cobdy_matrx corresponding to tau, initially empty.
         cobdy_matrix_pre.insert(0, (codim_tau, []))
 
@@ -291,10 +291,12 @@ def rips_filtration(max_dim, max_scale, dist_mat):
         lists. Each three-element lists represents one interval of in barcode
         and has the form [birth,death,dimension]
     """
-    sorted_simplices = _rips_simplices(max_dim, max_scale, dist_mat)
+    max_face_dim = max_dim+1
+    sorted_simplices = _rips_simplices(max_face_dim, max_scale, dist_mat)
     len_minus_one = len(sorted_simplices) - 1
-    cobdy_matrix_pre = _create_coboundary_matrix(sorted_simplices, max_dim)
-    # print(cobdy_matrix_pre);
+    cobdy_matrix_pre = _create_coboundary_matrix(sorted_simplices,
+                                                 max_face_dim)
+    # print(cobdy_matrix_pre)
 
     # print(sorted_simplices)
     # print(bdy_matrix_pre)
@@ -331,5 +333,7 @@ def rips_filtration(max_dim, max_scale, dist_mat):
         if paired_indices[i] == 0:
             birth = sorted_simplices[len_minus_one - i][1]
             dimension = len(sorted_simplices[len_minus_one - i][0]) - 1
-            scaled_pairs.append((birth, float("inf"), dimension))
+            # we don't report the infinite bars in degree max_dim+1
+            if dimension < max_face_dim:
+                scaled_pairs.append((birth, float("inf"), dimension))
     return scaled_pairs
